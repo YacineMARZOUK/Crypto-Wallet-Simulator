@@ -4,10 +4,10 @@ import com.crypto.model.FeePriority;
 import com.crypto.model.Transaction;
 
 public class EthereumFeeCalculator implements FeeCalculator {
-private static final BigDecimal ECONOMIQUE_GAS_PRICE = BigDecimal("10");
-private static final BigDecimal STANDARD_GAS_PRICE = BigDecimal("20");
-private static final BigDecimal FAST_GAS_PRICE = BigDecimal("40");
-private static final BigDecimal GAS_LIMIT = BigDecimal("21000");
+private static final BigDecimal ECONOMIQUE_GAS_PRICE = new BigDecimal("10");
+private static final BigDecimal STANDARD_GAS_PRICE = new BigDecimal("20");
+private static final BigDecimal FAST_GAS_PRICE = new BigDecimal("40");
+private static final BigDecimal GAS_LIMIT = new BigDecimal("21000");
 
 @Override
     public BigDecimal calculateFees (Transaction tx){
