@@ -59,4 +59,12 @@ public class Wallet {
         return transactions.stream()
                 .filter(tx -> tx.getStatus() == TransactionStatus.PENDING);
     }
+
+    public void credit(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
+
+    public void debit(BigDecimal amount) {
+        this.balance = this.balance.subtract(amount);
+    }
 }

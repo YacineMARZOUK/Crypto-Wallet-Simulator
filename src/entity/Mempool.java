@@ -10,6 +10,10 @@ public class Mempool {
     private CryptoType network;
     private List<Transaction> pendingTxs;
 
+    public List<Transaction> getPendingTxs() {
+        return pendingTxs;
+    }
+
     public Mempool(CryptoType network){
         this.network = network;
         this.pendingTxs = new ArrayList<>();
