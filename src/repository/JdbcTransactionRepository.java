@@ -1,4 +1,94 @@
-package Repository;
+package repository;
 
-public class JdbcTransactionRepository {
+import java.math.BigDecimal;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import entity.CryptoType;
+import entity.FeePriority;
+import entity.Transaction;
+import entity.TransactionStatus;
+
+public class JdbcTransactionRepository implements TransactionRepository {
+    private Connection conn;
+    private static final Logger logger = Logger.getLogger(JdbcTransactionRepository.class.getName());
+
+    public JdbcTransactionRepository(Connection conn) {
+        this.conn = conn;
+    }
+
+    @Override
+    public void save(Transaction tx) throws SQLException {
+        String sql = "INSERT INTO transactions (id, type, sourceAddress, destinationAddress, amount, created_at, priority, fees, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tx.getId()); // <-- plus UUID, juste String hash
+            ps.setString(2, tx.getType().name());
+            ps.setString(3, tx.getSourceAddress());
+            ps.setString(4, tx.getDestinationAddress());
+            ps.setBigDecimal(5, tx.getAmount());
+            ps.setTimestamp(6, Timestamp.valueOf(tx.getCreatedAt())); // conversion LocalDateTime -> Timestamp
+            ps.setString(7, tx.getPriority().name());
+            ps.setBigDecimal(8, tx.getFees());
+            ps.setString(9, tx.getStatus().name());
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            logger.log(Level.SEVERE, "Failed to save transaction", ex);
+            throw ex;
+        }
+    }
+
+    @Override
+    public List<Transaction> findPendingByType(CryptoType type) throws SQLException {
+        String sql = "SELECT * FROM transactions WHERE type = ? AND status = 'PENDING'";
+        List<Transaction> list = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Transaction tx = mapRowToTransaction(rs);
+                    list.add(tx);
+                }
+            }
+        }
+        return list;
+    }
+    @Override
+    public Optional<Transaction> findById(String id) throws SQLException {
+        String sql = "SELECT * FROM transactions WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRowToTransaction(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+
+
+
+    private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {
+        String id = rs.getString("id");
+        CryptoType type = CryptoType.valueOf(rs.getString("type"));
+        String sourceAddress = rs.getString("sourceAddress");
+        String destinationAddress = rs.getString("destinationAddress");
+        BigDecimal amount = rs.getBigDecimal("amount");
+        BigDecimal fees = rs.getBigDecimal("fees");
+        FeePriority priority = FeePriority.valueOf(rs.getString("priority"));
+        TransactionStatus status = TransactionStatus.valueOf(rs.getString("status"));
+        LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
+
+        Transaction tx = new Transaction(sourceAddress, destinationAddress, amount, fees, priority, status, createdAt, type);
+        tx.setId(id);
+        return tx;
+    }
+
+
 }
