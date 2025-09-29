@@ -1,11 +1,12 @@
-package com.crypto.model;
+package entity;
 
+import java.time.Instant;
 import java.util.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Transaction {
-    private UUID id ;
+    private String  id ;
     private String sourceAddress;
     private String destinationAddress;
     private BigDecimal amount;
@@ -13,10 +14,10 @@ public class Transaction {
     private FeePriority priority;
     private TransactionStatus status;
     private LocalDateTime createdAt;
-    private CryptoType network;
+    private CryptoType type;
 
-    public Transaction(String sourceAddress, String destinationAddress, BigDecimal amount, BigDecimal fees, FeePriority priority, TransactionStatus status, LocalDateTime createdAt, CryptoType network) {
-        this.id = UUID.randomUUID();
+    public Transaction(String sourceAddress, String destinationAddress, BigDecimal amount, BigDecimal fees, FeePriority priority, TransactionStatus status, LocalDateTime createdAt, CryptoType type) {
+        this.id = generateHashedId(sourceAddress, destinationAddress, createdAt);;
         this.sourceAddress = sourceAddress;
         this.destinationAddress = destinationAddress;
         this.amount = amount;
@@ -24,10 +25,14 @@ public class Transaction {
         this.priority = priority;
         this.status = status;
         this.createdAt = createdAt;
-        this.network = network;
+        this.type = type;
+    }
+    private String generateHashedId(String src, String dst, LocalDateTime createdAt) {
+        String raw = src + dst + createdAt.toString() + Math.random();
+        return Integer.toHexString(raw.hashCode()); // Simple hash (peut être remplacé par SHA-256)
     }
 
-    public UUID getId() {
+    public String getId() {
         return id;
     }
     public String getSourceAddress(){
@@ -48,13 +53,13 @@ public class Transaction {
     public TransactionStatus getStatus(){
         return status;
     }
-    public LocalDateTime getCreatedAt(){
+    public LocalDateTime  getCreatedAt(){
         return createdAt;
     }
-    public CryptoType getNetwork(){
-        return network;
+    public CryptoType getType(){
+        return type;
     }
-    public void setId(UUID id) {
+    public void setId(String id) {
         this.id = id;
     }
     public void setSourceAddress(String sourceAddress) {
@@ -78,8 +83,8 @@ public class Transaction {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    public void setNetwork(CryptoType network) {
-        this.network = network;
+    public void settype(CryptoType type) {
+        this.type = type;
     }
 
     public void markConfirmed() {

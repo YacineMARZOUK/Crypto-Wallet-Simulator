@@ -1,10 +1,8 @@
-package com.crypto.model;
+package entity;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class Mempool {
     private CryptoType network;

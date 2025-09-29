@@ -1,4 +1,4 @@
-package com.crypto.model;
+package entity;
 
 public enum FeePriority {
     ECONOMIQUE,

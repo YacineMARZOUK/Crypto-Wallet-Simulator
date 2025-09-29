@@ -1,4 +1,4 @@
-package com.crypto.model;
+package entity;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -12,13 +12,12 @@ public class Wallet {
     private CryptoType type;
     private String address;
     private BigDecimal balance;
-    private String adresse;
     private List<Transaction> transactions;
 
     public Wallet (CryptoType type, String address){
         this.id = UUID.randomUUID();
         this.type = type;
-        this.adresse = address;
+        this.address = address;
         this.balance = BigDecimal.ZERO;
         this.transactions = new ArrayList<>();
     }
