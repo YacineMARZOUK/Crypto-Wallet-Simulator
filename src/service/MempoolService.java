@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -54,24 +55,20 @@ public class MempoolService {
         // Calcul des frais selon le type de crypto
         BigDecimal fees;
         if (type == CryptoType.BITCOIN) {
-            fees = new BitcoinFeeCalculator().calculateFees(
-                    new Transaction(src, dest, amount, BigDecimal.ZERO, priority, TransactionStatus.PENDING, LocalDateTime.now(), type)
-            );
+            fees = new BitcoinFeeCalculator().calculateFees(amount, priority);
         } else {
-            fees = new EthereumFeeCalculator().calculateFees(
-                    new Transaction(src, dest, amount, BigDecimal.ZERO, priority, TransactionStatus.PENDING, LocalDateTime.now(), type)
-            );
+            fees = new EthereumFeeCalculator().calculateFees(amount, priority);
         }
 
         return new Transaction(src, dest, amount, fees, priority, TransactionStatus.PENDING, LocalDateTime.now(), type);
     }
 
-    // Retourne la position et temps estimé dans le mempool
+
     public String getPositionInfo(String txId) {
         List<Transaction> pending = mempool.getPendingTxs();
         int pos = -1;
         for (int i = 0; i < pending.size(); i++) {
-            if (pending.get(i).getId().equals(txId)) {
+            if (Objects.equals(pending.get(i).getId(), txId)) {
                 pos = i + 1; // position 1-based
                 break;
             }

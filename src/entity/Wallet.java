@@ -50,7 +50,7 @@ public class Wallet {
 
     public Optional<Transaction> getTransactionById(UUID txId) {
         return transactions.stream()
-                .filter(tx -> tx.getId().equals(txId))
+                .filter(tx -> Objects.equals(tx.getId(), txId))
                 .findFirst();
     }
 

@@ -1,7 +1,12 @@
 package service;
 
 import java.math.BigDecimal;
+
+import entity.FeePriority;
 import entity.Transaction;
+
+import static entity.FeePriority.*;
+
 
 public class BitcoinFeeCalculator implements FeeCalculator {
     private static final BigDecimal ECONOMIC_RATE = new BigDecimal("5");
@@ -9,10 +14,10 @@ public class BitcoinFeeCalculator implements FeeCalculator {
     private static final BigDecimal FAST_RATE = new BigDecimal("20");
 
     @Override
-    public BigDecimal calculateFees (Transaction tx){
+    public BigDecimal calculateFees (BigDecimal amount, FeePriority priority){
         BigDecimal txSize = new BigDecimal("250");
         BigDecimal rate;
-        switch (tx.getPriority()){
+        switch (priority){
             case ECONOMIQUE:
                 rate = ECONOMIC_RATE;
                 break;

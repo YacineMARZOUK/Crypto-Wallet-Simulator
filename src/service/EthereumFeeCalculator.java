@@ -1,6 +1,7 @@
 package service;
 import java.math.BigDecimal;
 
+import entity.FeePriority;
 import entity.Transaction;
 
 public class EthereumFeeCalculator implements FeeCalculator {
@@ -10,9 +11,9 @@ private static final BigDecimal FAST_GAS_PRICE = new BigDecimal("40");
 private static final BigDecimal GAS_LIMIT = new BigDecimal("21000");
 
 @Override
-    public BigDecimal calculateFees (Transaction tx){
+    public BigDecimal calculateFees (BigDecimal amount, FeePriority priority){
     BigDecimal gasPrice;
-    switch (tx.getPriority()){
+    switch (priority){
         case ECONOMIQUE:
             gasPrice = ECONOMIQUE_GAS_PRICE;
             break;
