@@ -41,6 +41,26 @@ public class JdbcTransactionRepository implements TransactionRepository {
             throw ex;
         }
     }
+    @Override
+    public void update(Transaction tx) throws SQLException {
+        String sql = "UPDATE transactions SET " +
+                "type = ?, sourceAddress = ?, destinationAddress = ?, " +
+                "amount = ?, created_at = ?, priority = ?, fees = ?, status = ? " +
+                "WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tx.getType().name());
+            ps.setString(2, tx.getSourceAddress());
+            ps.setString(3, tx.getDestinationAddress());
+            ps.setBigDecimal(4, tx.getAmount());
+            ps.setTimestamp(5, java.sql.Timestamp.valueOf(tx.getCreatedAt()));
+            ps.setString(6, tx.getPriority().name());
+            ps.setBigDecimal(7, tx.getFees());
+            ps.setString(8, tx.getStatus().name());
+            ps.setString(9, tx.getId());
+            ps.executeUpdate();
+        }
+    }
+
 
     @Override
     public List<Transaction> findPendingByType(CryptoType type) throws SQLException {

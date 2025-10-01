@@ -1,7 +1,7 @@
 package service;
 import java.math.BigDecimal;
-import com.crypto.model.FeePriority;
-import com.crypto.model.Transaction;
+
+import entity.Transaction;
 
 public class EthereumFeeCalculator implements FeeCalculator {
 private static final BigDecimal ECONOMIQUE_GAS_PRICE = new BigDecimal("10");

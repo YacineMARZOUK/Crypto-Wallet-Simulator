@@ -1,8 +1,8 @@
 package service;
 
 import java.math.BigDecimal;
-import com.crypto.model.Transaction;
-import com.crypto.model.FeePriority;
+import entity.Transaction;
+
 public class BitcoinFeeCalculator implements FeeCalculator {
     private static final BigDecimal ECONOMIC_RATE = new BigDecimal("5");
     private static final BigDecimal STANDARD_RATE = new BigDecimal("10");
