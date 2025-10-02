@@ -24,22 +24,38 @@ public class TransactionService {
     }
 
     public Transaction createTransaction(String sourceAddress, String destinationAddress,
-                                         BigDecimal amount, BigDecimal fees,  FeePriority priority,
+                                         BigDecimal amount, BigDecimal fees, FeePriority priority,
                                          CryptoType type) throws SQLException {
 
+        // 1. Vérifier que le wallet source existe
         Optional<Wallet> sourceWalletOpt = walletRepository.findByAddress(sourceAddress);
         if (sourceWalletOpt.isEmpty()) {
             throw new IllegalArgumentException("Wallet source introuvable.");
         }
         Wallet sourceWallet = sourceWalletOpt.get();
 
-        if (sourceWallet.getBalance().compareTo(amount.add(fees)) < 0) {
-            throw new IllegalArgumentException("Solde insuffisant.");
+        // 2. Calculer le montant total (montant + frais)
+        BigDecimal totalAmount = amount.add(fees);
+
+        System.out.println("\n💰 Vérification du solde:");
+        System.out.println("   Solde actuel: " + sourceWallet.getBalance());
+        System.out.println("   Montant à envoyer: " + amount);
+        System.out.println("   Frais: " + fees);
+        System.out.println("   Total requis: " + totalAmount);
+
+        // 3. Vérifier le solde
+        if (sourceWallet.getBalance().compareTo(totalAmount) < 0) {
+            throw new IllegalArgumentException("Solde insuffisant. Requis: " + totalAmount + ", Disponible: " + sourceWallet.getBalance());
         }
 
-        sourceWallet.debit(amount.add(fees));
+        // 4. DÉBITER le wallet source (montant + frais)
+        BigDecimal oldBalance = sourceWallet.getBalance();
+        sourceWallet.debit(totalAmount);
         walletRepository.updateBalance(sourceWallet.getId(), sourceWallet.getBalance());
 
+        System.out.println("   ✓ Wallet débité: " + oldBalance + " → " + sourceWallet.getBalance());
+
+        // 5. Créer la transaction
         Transaction tx = new Transaction(
                 sourceAddress,
                 destinationAddress,
@@ -51,8 +67,10 @@ public class TransactionService {
                 type
         );
 
+        // 6. Sauvegarder en base
         transactionRepository.save(tx);
 
+        // 7. Ajouter au mempool
         mempoolService.getMempool().addTransaction(tx);
 
         return tx;

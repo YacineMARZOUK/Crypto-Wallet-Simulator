@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -113,27 +114,35 @@ public class MempoolService {
     public void processBlock(int blockSize) throws SQLException {
         List<Transaction> pending = mempool.getPendingTxs();
         int count = Math.min(blockSize, pending.size());
-        List<Transaction> toConfirm = pending.subList(0, count);
+
+        // FIX: Créer une COPIE pour éviter ConcurrentModificationException
+        List<Transaction> toConfirm = new ArrayList<>(pending.subList(0, count));
 
         int successCount = 0;
         int walletNotFoundCount = 0;
 
         for (Transaction tx : toConfirm) {
+            System.out.println("\n🔄 Traitement de la transaction " + tx.getId());
+            System.out.println("   Source: " + tx.getSourceAddress());
+            System.out.println("   Destination: " + tx.getDestinationAddress());
+            System.out.println("   Montant: " + tx.getAmount());
+
             // 1. Mettre à jour le statut en CONFIRMED
             tx.setStatus(TransactionStatus.CONFIRMED);
             txRepo.update(tx);
 
-            // 2. CRÉDITER le wallet destination avec le montant (sans les frais)
+            // 2. CRÉDITER le wallet DESTINATION (pas la source!)
             Optional<Wallet> destWalletOpt = walletRepo.findByAddress(tx.getDestinationAddress());
             if (destWalletOpt.isPresent()) {
                 Wallet destWallet = destWalletOpt.get();
+                BigDecimal oldBalance = destWallet.getBalance();
                 destWallet.credit(tx.getAmount());
                 walletRepo.updateBalance(destWallet.getId(), destWallet.getBalance());
                 successCount++;
-                System.out.println("  ✓ Wallet " + tx.getDestinationAddress() + " crédité de " + tx.getAmount());
+                System.out.println("   ✓ Wallet DESTINATION crédité: " + oldBalance + " → " + destWallet.getBalance());
             } else {
                 walletNotFoundCount++;
-                System.out.println("  ⚠ Wallet destination introuvable pour TX " + tx.getId() + " (adresse externe?)");
+                System.out.println("   ⚠ Wallet destination introuvable (adresse externe?)");
             }
         }
 

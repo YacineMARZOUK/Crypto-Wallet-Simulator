@@ -44,15 +44,21 @@ public class JdbcWalletRepository implements WalletRepository {
             stmt.setString(1, address);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                // CORRECTION : Récupérer l'ID et le définir sur le wallet
                 UUID id = (UUID) rs.getObject("id");
                 CryptoType type = CryptoType.valueOf(rs.getString("type").trim().toUpperCase());
                 String addr = rs.getString("address");
                 BigDecimal balance = rs.getBigDecimal("balance");
 
                 Wallet wallet = new Wallet(type, addr);
-                wallet.setId(id); // IMPORTANT: Définir l'ID pour pouvoir faire updateBalance
-                wallet.setBalance(balance); // Utiliser setBalance au lieu de credit
+                wallet.setId(id);
+                // CRITIQUE: Définir directement le solde, ne PAS utiliser credit()
+                // car credit() AJOUTE au solde existant (qui est 0 par défaut)
+                if (wallet.getBalance() == null || wallet.getBalance().compareTo(BigDecimal.ZERO) == 0) {
+                    wallet.setBalance(balance);
+                } else {
+                    // Si le wallet a déjà un solde (constructor), on le remplace
+                    wallet.setBalance(balance);
+                }
 
                 return Optional.of(wallet);
             }
