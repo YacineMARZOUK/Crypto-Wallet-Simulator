@@ -5,33 +5,38 @@ import entity.FeePriority;
 import entity.Mempool;
 import entity.Transaction;
 import entity.TransactionStatus;
+import entity.Wallet;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import repository.JdbcTransactionRepository;
+import repository.JdbcWalletRepository;
 import repository.TransactionRepository;
+import repository.WalletRepository;
 
 public class MempoolService {
 
     private final Mempool mempool;
     private final TransactionRepository txRepo;
+    private final WalletRepository walletRepo;
     private final Random random = new Random();
 
     public MempoolService(CryptoType network, Connection conn) {
         this.mempool = new Mempool(network);
         this.txRepo = new JdbcTransactionRepository(conn);
+        this.walletRepo = new JdbcWalletRepository(conn);
 
-        // AJOUT : Charger les transactions PENDING depuis la DB au démarrage
+        // Charger les transactions PENDING depuis la DB au démarrage
         loadPendingTransactions();
     }
 
-    // Nouvelle méthode pour charger les transactions PENDING
+    // Charger les transactions PENDING
     private void loadPendingTransactions() {
         try {
             List<Transaction> pendingTxs = txRepo.findPendingByType(mempool.getType());
@@ -101,16 +106,46 @@ public class MempoolService {
                 pos, pending.size(), estimatedMinutes);
     }
 
+    /**
+     * Traite un bloc : confirme les N transactions avec les frais les plus élevés
+     * et CRÉDITE les wallets destinations
+     */
     public void processBlock(int blockSize) throws SQLException {
         List<Transaction> pending = mempool.getPendingTxs();
         int count = Math.min(blockSize, pending.size());
         List<Transaction> toConfirm = pending.subList(0, count);
 
+        int successCount = 0;
+        int walletNotFoundCount = 0;
+
         for (Transaction tx : toConfirm) {
+            // 1. Mettre à jour le statut en CONFIRMED
             tx.setStatus(TransactionStatus.CONFIRMED);
             txRepo.update(tx);
+
+            // 2. CRÉDITER le wallet destination avec le montant (sans les frais)
+            Optional<Wallet> destWalletOpt = walletRepo.findByAddress(tx.getDestinationAddress());
+            if (destWalletOpt.isPresent()) {
+                Wallet destWallet = destWalletOpt.get();
+                destWallet.credit(tx.getAmount());
+                walletRepo.updateBalance(destWallet.getId(), destWallet.getBalance());
+                successCount++;
+                System.out.println("  ✓ Wallet " + tx.getDestinationAddress() + " crédité de " + tx.getAmount());
+            } else {
+                walletNotFoundCount++;
+                System.out.println("  ⚠ Wallet destination introuvable pour TX " + tx.getId() + " (adresse externe?)");
+            }
         }
 
+        // 3. Retirer les transactions confirmées du mempool
         mempool.getPendingTxs().removeAll(toConfirm);
+
+        // 4. Afficher le résumé
+        System.out.println("\n📊 Résumé du bloc:");
+        System.out.println("  • Transactions confirmées: " + toConfirm.size());
+        System.out.println("  • Wallets crédités: " + successCount);
+        if (walletNotFoundCount > 0) {
+            System.out.println("  • Adresses externes (non créditées): " + walletNotFoundCount);
+        }
     }
 }

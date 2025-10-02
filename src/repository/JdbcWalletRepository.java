@@ -44,11 +44,16 @@ public class JdbcWalletRepository implements WalletRepository {
             stmt.setString(1, address);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                Wallet wallet = new Wallet(
-                        CryptoType.valueOf(rs.getString("type").trim().toUpperCase()),
-                        rs.getString("address")
-                );
-                wallet.credit(rs.getBigDecimal("balance"));
+                // CORRECTION : Récupérer l'ID et le définir sur le wallet
+                UUID id = (UUID) rs.getObject("id");
+                CryptoType type = CryptoType.valueOf(rs.getString("type").trim().toUpperCase());
+                String addr = rs.getString("address");
+                BigDecimal balance = rs.getBigDecimal("balance");
+
+                Wallet wallet = new Wallet(type, addr);
+                wallet.setId(id); // IMPORTANT: Définir l'ID pour pouvoir faire updateBalance
+                wallet.setBalance(balance); // Utiliser setBalance au lieu de credit
+
                 return Optional.of(wallet);
             }
         }
@@ -62,11 +67,15 @@ public class JdbcWalletRepository implements WalletRepository {
         try (Statement stmt = connection.createStatement()) {
             ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
-                Wallet wallet = new Wallet(
-                        CryptoType.valueOf(rs.getString("type")),
-                        rs.getString("address")
-                );
-                wallet.credit(rs.getBigDecimal("balance"));
+                UUID id = (UUID) rs.getObject("id");
+                CryptoType type = CryptoType.valueOf(rs.getString("type").trim().toUpperCase());
+                String address = rs.getString("address");
+                BigDecimal balance = rs.getBigDecimal("balance");
+
+                Wallet wallet = new Wallet(type, address);
+                wallet.setId(id);
+                wallet.setBalance(balance);
+
                 wallets.add(wallet);
             }
         }

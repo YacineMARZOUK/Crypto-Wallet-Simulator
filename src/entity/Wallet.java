@@ -40,6 +40,14 @@ public class Wallet {
         return balance;
     }
 
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
     public List<Transaction> getTransactions() {
         return transactions;
     }

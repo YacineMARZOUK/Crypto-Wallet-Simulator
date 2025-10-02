@@ -24,7 +24,6 @@ public class MainMenu {
         WalletService walletService = new WalletService(walletRepo);
         TransactionService transactionService = new TransactionService(walletRepo, txRepo, mempoolService);
 
-
         boolean running = true;
 
         while (running) {
@@ -55,9 +54,8 @@ public class MainMenu {
         System.out.println("1 - Créer un wallet");
         System.out.println("2 - Créer une transaction");
         System.out.println("3 - Voir position d'une transaction dans le mempool");
-        System.out.println("4 - Comparer les 3 niveaux de frais (fee levels)");
-        System.out.println("5 - Consulter l'état du mempool");
-        System.out.println("6 - Miner un bloc (confirmer transactions)");
+        System.out.println("4 - Consulter l'état du mempool");
+        System.out.println("5 - Miner un bloc (confirmer transactions)");
         System.out.println("0 - Quitter");
         System.out.print("👉 Votre choix: ");
     }
@@ -89,7 +87,6 @@ public class MainMenu {
         System.out.print("Montant : ");
         BigDecimal amount = new BigDecimal(scanner.nextLine());
 
-
         System.out.println("Choisir le niveau de frais : 1=ECONOMIQUE, 2=STANDARD, 3=RAPIDE");
         String feeChoice = scanner.nextLine();
         FeePriority priority;
@@ -99,14 +96,12 @@ public class MainMenu {
             default: priority = FeePriority.STANDARD;
         }
 
-
         BigDecimal fees;
         if (sourceWallet.getType() == CryptoType.BITCOIN) {
             fees = new BitcoinFeeCalculator().calculateFees(amount, priority);
         } else {
             fees = new EthereumFeeCalculator().calculateFees(amount, priority);
         }
-
 
         Transaction tx = transactionService.createTransaction(
                 source,
@@ -124,12 +119,12 @@ public class MainMenu {
         System.out.println("Statut: " + tx.getStatus());
         System.out.println("Priorité: " + tx.getPriority());
         System.out.println("Type de crypto: " + tx.getType());
+        System.out.println("\n💡 La transaction est en attente dans le mempool.");
+        System.out.println("   Utilisez l'option 5 pour miner un bloc et confirmer les transactions.");
     }
 
-
-
     private static void viewPositionInMempool(MempoolService mempoolService) {
-        System.out.println("\n💡 Entrez l'ID UUID de votre transaction (pas l'adresse !)");
+        System.out.println("\n💡 Entrez l'ID UUID de votre transaction");
         System.out.println("Exemple: 1bf4a7f2-5d8a-4f44-8cb7-96c591932268");
         System.out.print("ID de la transaction: ");
         String id = scanner.nextLine().trim();
@@ -138,22 +133,33 @@ public class MainMenu {
         System.out.println(info);
     }
 
-
     private static void viewMempool(MempoolService mempoolService) {
         List<Transaction> pending = mempoolService.getMempool().getPendingTxs();
 
-        System.out.println("=== ÉTAT DU MEMPOOL ===");
-        System.out.printf("%-40s | %-10s | %-10s%n", "Transaction ID", "Frais", "Statut");
-        System.out.println("--------------------------------------------------------------");
+        System.out.println("\n=== ÉTAT DU MEMPOOL ===");
+        System.out.printf("%-40s | %-10s | %-10s | %-10s%n", "Transaction ID", "Montant", "Frais", "Statut");
+        System.out.println("--------------------------------------------------------------------------------");
         for (Transaction tx : pending) {
-            System.out.printf("%-40s | %-10s | %-10s%n", tx.getId(), tx.getFees(), tx.getStatus());
+            System.out.printf("%-40s | %-10s | %-10s | %-10s%n",
+                    tx.getId(), tx.getAmount(), tx.getFees(), tx.getStatus());
         }
+        System.out.println("\nTotal: " + pending.size() + " transaction(s) en attente");
     }
 
     private static void confirmBlock(MempoolService mempoolService) throws SQLException {
+        List<Transaction> pending = mempoolService.getMempool().getPendingTxs();
+
+        if (pending.isEmpty()) {
+            System.out.println("⚠️ Aucune transaction en attente dans le mempool.");
+            return;
+        }
+
+        System.out.println("Transactions en attente: " + pending.size());
         System.out.print("Taille du bloc (nombre de tx à confirmer) : ");
         int size = Integer.parseInt(scanner.nextLine());
+
+        System.out.println("\n⛏️ Mining en cours...\n");
         mempoolService.processBlock(size);
-        System.out.println("✅ Bloc miné avec succès !");
+        System.out.println("\n✅ Bloc miné avec succès !");
     }
 }
