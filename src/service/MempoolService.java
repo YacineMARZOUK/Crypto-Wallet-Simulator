@@ -26,6 +26,22 @@ public class MempoolService {
     public MempoolService(CryptoType network, Connection conn) {
         this.mempool = new Mempool(network);
         this.txRepo = new JdbcTransactionRepository(conn);
+
+        // AJOUT : Charger les transactions PENDING depuis la DB au démarrage
+        loadPendingTransactions();
+    }
+
+    // Nouvelle méthode pour charger les transactions PENDING
+    private void loadPendingTransactions() {
+        try {
+            List<Transaction> pendingTxs = txRepo.findPendingByType(mempool.getType());
+            for (Transaction tx : pendingTxs) {
+                mempool.addTransaction(tx);
+            }
+            System.out.println("✅ " + pendingTxs.size() + " transaction(s) chargée(s) depuis la base de données");
+        } catch (SQLException e) {
+            System.err.println("⚠️ Erreur lors du chargement des transactions: " + e.getMessage());
+        }
     }
 
     public Mempool getMempool() {
@@ -39,8 +55,8 @@ public class MempoolService {
                 .collect(Collectors.toList());
 
         for (Transaction tx : txs) {
-            mempool.addTransaction(tx);   // Trie automatiquement par frais
-            txRepo.save(tx);              // Sauvegarde dans DB
+            mempool.addTransaction(tx);
+            txRepo.save(tx);
         }
     }
 
@@ -52,7 +68,6 @@ public class MempoolService {
         BigDecimal amount = BigDecimal.valueOf(random.nextDouble() * 0.5 + 0.01);
         FeePriority priority = FeePriority.values()[random.nextInt(FeePriority.values().length)];
 
-        // Calcul des frais selon le type de crypto
         BigDecimal fees;
         if (type == CryptoType.BITCOIN) {
             fees = new BitcoinFeeCalculator().calculateFees(amount, priority);
@@ -63,21 +78,28 @@ public class MempoolService {
         return new Transaction(src, dest, amount, fees, priority, TransactionStatus.PENDING, LocalDateTime.now(), type);
     }
 
-
     public String getPositionInfo(String txId) {
         List<Transaction> pending = mempool.getPendingTxs();
+
+        // Debug : afficher le nombre de transactions dans le mempool
+        System.out.println("🔍 Nombre de transactions dans le mempool: " + pending.size());
+
         int pos = -1;
         for (int i = 0; i < pending.size(); i++) {
-            if (Objects.equals(pending.get(i).getId(), txId)) {
-                pos = i + 1; // position 1-based
+            if (pending.get(i).getId().toString().equals(txId)) {
+                pos = i + 1;
                 break;
             }
         }
-        if (pos == -1) return "Transaction introuvable dans le mempool";
-        long estimatedMinutes = pos * 10L; // hypothèse : 1 bloc / 10 min
-        return String.format("Votre transaction est en position %d sur %d — Temps estimé: %d min", pos, pending.size(), estimatedMinutes);
-    }
 
+        if (pos == -1) {
+            return "Transaction introuvable dans le mempool (peut-être déjà confirmée ou ID incorrect)";
+        }
+
+        long estimatedMinutes = pos * 10L;
+        return String.format("Votre transaction est en position %d sur %d — Temps estimé: %d min",
+                pos, pending.size(), estimatedMinutes);
+    }
 
     public void processBlock(int blockSize) throws SQLException {
         List<Transaction> pending = mempool.getPendingTxs();
@@ -91,5 +113,4 @@ public class MempoolService {
 
         mempool.getPendingTxs().removeAll(toConfirm);
     }
-
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +27,7 @@ public class JdbcTransactionRepository implements TransactionRepository {
     public void save(Transaction tx) throws SQLException {
         String sql = "INSERT INTO tx (id, type, source_address, dest_address, amount, created_at, priority, fees, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, tx.getId()); // <-- plus UUID, juste String hash
+            ps.setObject(1, tx.getId());// <-- plus UUID, juste String hash
             ps.setString(2, tx.getType().name());
             ps.setString(3, tx.getSourceAddress());
             ps.setString(4, tx.getDestinationAddress());
@@ -56,7 +57,7 @@ public class JdbcTransactionRepository implements TransactionRepository {
             ps.setString(6, tx.getPriority().name());
             ps.setBigDecimal(7, tx.getFees());
             ps.setString(8, tx.getStatus().name());
-            ps.setInt(9, tx.getId());
+            ps.setObject(9, tx.getId());
             ps.executeUpdate();
         }
     }
@@ -95,18 +96,18 @@ public class JdbcTransactionRepository implements TransactionRepository {
 
 
     private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {
-        String id = rs.getString("id");
-        CryptoType type = CryptoType.valueOf(rs.getString("type"));
+        UUID id = (UUID) rs.getObject("id");
+        CryptoType type = CryptoType.valueOf(rs.getString("type").trim().toUpperCase());
         String sourceAddress = rs.getString("source_address");
         String destinationAddress = rs.getString("dest_address");
         BigDecimal amount = rs.getBigDecimal("amount");
         BigDecimal fees = rs.getBigDecimal("fees");
-        FeePriority priority = FeePriority.valueOf(rs.getString("priority"));
+        FeePriority priority = FeePriority.valueOf(rs.getString("priority").trim());
         TransactionStatus status = TransactionStatus.valueOf(rs.getString("status"));
         LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
 
         Transaction tx = new Transaction(sourceAddress, destinationAddress, amount, fees, priority, status, createdAt, type);
-        tx.setId(Integer.parseInt(id));
+        tx.setId(id);
         return tx;
     }
 

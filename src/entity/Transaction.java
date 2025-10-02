@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Transaction {
-    private int  id ;
+    private UUID id  ;
     private String sourceAddress;
     private String destinationAddress;
     private BigDecimal amount;
@@ -17,7 +17,7 @@ public class Transaction {
     private CryptoType type;
 
     public Transaction(String sourceAddress, String destinationAddress, BigDecimal amount, BigDecimal fees, FeePriority priority, TransactionStatus status, LocalDateTime createdAt, CryptoType type) {
-        this.id = id;
+        this.id = UUID.randomUUID();
         this.sourceAddress = sourceAddress;
         this.destinationAddress = destinationAddress;
         this.amount = amount;
@@ -32,7 +32,7 @@ public class Transaction {
         return Integer.toHexString(raw.hashCode()); // Simple hash (peut être remplacé par SHA-256)
     }
 
-    public int getId() {
+    public UUID getId() {
         return id;
     }
     public String getSourceAddress(){
@@ -59,7 +59,7 @@ public class Transaction {
     public CryptoType getType(){
         return type;
     }
-    public void setId(int id) {
+    public void setId(UUID  id) {
         this.id = id;
     }
     public void setSourceAddress(String sourceAddress) {
@@ -90,6 +90,7 @@ public class Transaction {
     public void markConfirmed() {
         this.status = TransactionStatus.CONFIRMED;
     }
+
 
 
     public void markRejected() {

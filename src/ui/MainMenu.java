@@ -129,8 +129,10 @@ public class MainMenu {
 
 
     private static void viewPositionInMempool(MempoolService mempoolService) {
-        System.out.print("Entrez l'ID de votre transaction: ");
-        String id = scanner.nextLine();
+        System.out.println("\n💡 Entrez l'ID UUID de votre transaction (pas l'adresse !)");
+        System.out.println("Exemple: 1bf4a7f2-5d8a-4f44-8cb7-96c591932268");
+        System.out.print("ID de la transaction: ");
+        String id = scanner.nextLine().trim();
 
         String info = mempoolService.getPositionInfo(id);
         System.out.println(info);

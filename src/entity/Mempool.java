@@ -25,5 +25,8 @@ public class Mempool {
     public void sortByFees(){
         pendingTxs.sort(Comparator.comparing(Transaction::getFees).reversed().thenComparing(Transaction::getCreatedAt));
     }
+    public CryptoType getType() {
+        return type;
+    }
 
 }
