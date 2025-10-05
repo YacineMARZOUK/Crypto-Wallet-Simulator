@@ -33,11 +33,10 @@ public class MempoolService {
         this.txRepo = new JdbcTransactionRepository(conn);
         this.walletRepo = new JdbcWalletRepository(conn);
 
-        // Charger les transactions PENDING depuis la DB au démarrage
+
         loadPendingTransactions();
     }
 
-    // Charger les transactions PENDING
     private void loadPendingTransactions() {
         try {
             List<Transaction> pendingTxs = txRepo.findPendingByType(mempool.getType());
@@ -54,7 +53,7 @@ public class MempoolService {
         return mempool;
     }
 
-    // Générer N transactions aléatoires et les ajouter au mempool + DB
+    // Générer N transactions aleatoires et les ajouter au mempool + DB
     public void generateRandomTransactions(int count) throws SQLException {
         List<Transaction> txs = IntStream.range(0, count)
                 .mapToObj(i -> randomTransaction())
