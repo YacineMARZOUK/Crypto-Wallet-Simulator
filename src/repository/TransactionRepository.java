@@ -12,4 +12,5 @@ public interface TransactionRepository {
     void update(Transaction tx) throws SQLException;
     List<Transaction> findPendingByType(CryptoType type) throws SQLException;
     Optional<Transaction> findById(String id) throws SQLException;
+    List<Transaction> findAll() throws SQLException;
 }

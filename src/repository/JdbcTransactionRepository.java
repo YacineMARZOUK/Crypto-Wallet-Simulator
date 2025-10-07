@@ -110,6 +110,27 @@ public class JdbcTransactionRepository implements TransactionRepository {
         tx.setId(id);
         return tx;
     }
+    @Override
+    public List<Transaction> findAll() throws SQLException {
+        String sql = "SELECT * FROM tx";
+        List<Transaction> transactions = new ArrayList<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Transaction tx = mapRowToTransaction(rs);
+                transactions.add(tx);
+            }
+
+        } catch (SQLException ex) {
+            logger.log(Level.SEVERE, "Failed to retrieve all transactions", ex);
+            throw ex;
+        }
+
+        return transactions;
+    }
+
 
 
 }

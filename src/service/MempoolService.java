@@ -156,4 +156,6 @@ public class MempoolService {
             System.out.println("  • Adresses externes (non créditées): " + walletNotFoundCount);
         }
     }
+
+
 }

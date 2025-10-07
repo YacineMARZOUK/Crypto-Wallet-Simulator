@@ -7,6 +7,7 @@ import repository.WalletRepository;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public class TransactionService {
@@ -75,4 +76,16 @@ public class TransactionService {
 
         return tx;
     }
+
+
+
+
+    public double findbyHighest() throws SQLException {
+        List<Transaction> allTxs = transactionRepository.findAll();
+        return allTxs.stream()
+                .filter(tx-> tx.getStatus() == TransactionStatus.PENDING)
+                .mapToDouble(tx -> tx.getFees().doubleValue()).sum();
+    }
+
+
 }

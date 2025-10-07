@@ -72,5 +72,6 @@ public class WalletService {
             default -> UUID.randomUUID().toString();
         };
     }
+
 }
 
